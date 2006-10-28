@@ -12,7 +12,7 @@ namespace AI
         AI ai;
         PointF force_current;
         PointF current_direction;
-        float frictionPerTick, current_magnitude;
+        public float frictionPerTick, current_magnitude;
         PointF INF_PointF;
         Random rn;
 
@@ -22,7 +22,7 @@ namespace AI
         public float being_feed_timer_start_s = 1f;
         float current_magnitude_sd = 10f;
         float current_direction_sd = 2f;
-        float essence_movement_force_sd = 700f;
+        public float essence_movement_force_sd = 700f;
         int essence_update_interval = 1;
 
         public Physics(Env _env)
@@ -124,15 +124,15 @@ namespace AI
         {
             frictionPerTick = 1f - (friction * env.timeInterval);
 
-            //ApplyCurrent();
-            RandomEssenceMovement();
+            ////ApplyCurrent();
+            //RandomEssenceMovement();
 
-            RealiseForce();
+            //RealiseForce();
 
-            //CheckBounds();
-            CorrectDistance();
+            ////CheckBounds();
+            //CorrectDistance();
 
-            DeleteOldEssence();
+            //DeleteOldEssence();
         }
 
         private void DeleteOldEssence()
@@ -215,12 +215,16 @@ namespace AI
             //    }
             //}
             //protein
-            c = ai.essences.Count;
-            if (c != 0)
+            try
             {
-                for (int i = 0; i < c; i++)
+                IEnumerator<Essence> en = ai.essences.GetEnumerator();
+                Essence essence;
+
+                while (en.MoveNext())
                 {
-                    if (f.Distance(ai.essences[i].p, being.p) <= being_feed_radius_coefficient * being.radius)
+                    essence = en.Current;
+
+                    if (f.Distance(essence.p, being.p) <= being_feed_radius_coefficient * being.radius)
                     {
                         //chack that it is not one of own
                         cc = being.shells.Count;
@@ -234,7 +238,7 @@ namespace AI
                                 {
                                     for (int b = 0; b < ccc; b++)
                                     {
-                                        if (ai.essences[i] == being.shells[v].essences[b])
+                                        if (essence == being.shells[v].essences[b])
                                         {
                                             found = true;
                                             break;
@@ -249,14 +253,18 @@ namespace AI
                         }
                         if (!found)
                         {
-                            Eat(being, ai.essences[i]);
+                            Eat(being, essence);
                         }
                     }
                 }
+                en.Dispose();
             }
+            catch { }
         }
         private void Eat(Being being, Essence essence)
         {
+            env.ai.AddEatenEssence(essence.p);
+
             env.ai.AllocateEssenceToShell(being, essence);
 
             being.feeding = false;
@@ -313,7 +321,7 @@ namespace AI
                 RealiseForce(ai.shells[i]);
             }
         }
-        void RealiseForce(Being being)
+        public void RealiseForce(Being being)
         {
             PointF acc, vChange, dist;
 
@@ -347,7 +355,7 @@ namespace AI
 
             being.mouth_offset = f.Offset(dir, being.radius * 1.2f);
         }
-        void RealiseForce(Essence essence)
+        public void RealiseForce(Essence essence)
         {
             PointF acc, vChange, dist;
 
@@ -368,7 +376,7 @@ namespace AI
             dist = f.Multiply(essence.velocity, env.timeInterval * (float)essence_update_interval);
             essence.p = f.Add(essence.p, dist);
         }
-        void RealiseForce(Shell shell)
+        public void RealiseForce(Shell shell)
         {
             PointF acc, vChange, dist;
 
@@ -411,7 +419,7 @@ namespace AI
                 }
             }
         }
-        void CorrectDistance(Shell shell)
+        public void CorrectDistance(Shell shell)
         {
             PointF dir, dist, newP, vChange;
             int index;
@@ -454,7 +462,7 @@ namespace AI
             shell.velocity = f.Add(shell.velocity, vChange);
             shell.velocity = f.Multiply(shell.velocity, friction);
         }
-        void CorrectDistance(Essence essence)
+        public void CorrectDistance(Essence essence)
         {
             if (essence.shell == null)
             {

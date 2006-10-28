@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
+using System.Threading;
 
 namespace AI
 {
@@ -27,9 +28,11 @@ namespace AI
         public Size OldEnvSize;
         bool button_t, button_ctrl, button_shift;
 
+        Thread thread;
+
         //settings
-        float essence_spawn_time_mean = 2f;
-        float essence_spawn_time_sd = 4f;
+        float essence_spawn_time_mean = 1f;
+        float essence_spawn_time_sd = 3f;
 
         public Env()
         {
@@ -53,6 +56,9 @@ namespace AI
             alive = true;
             button_t = false;
 
+            ThreadStart starter = delegate { timer_update(); };
+            thread = new Thread(starter);
+            thread.Start();
 
             this.DoubleBuffered = true;
         }
@@ -240,17 +246,17 @@ namespace AI
 
             if (button_t)
             {
-                sensitivity = 0.0002f;
+                sensitivity = -0.0002f;
                 UpdateTimeScale((float)e.Delta * sensitivity);
             }
             else if (button_shift)
             {
-                sensitivity = 0.01f;
+                sensitivity = -0.01f;
                 vis.ScrollStatus((int)((float)e.Delta * sensitivity));
             }
             else
             {
-                sensitivity = 0.0002f;
+                sensitivity = -0.0002f;
                 vis.ChangeScale((float)e.Delta * sensitivity);
             }
         }
@@ -294,77 +300,88 @@ namespace AI
             OldEnvSize = this.Size;
         }
 
+        void timer_update()
+        {
+            while (thread.IsAlive)
+            {
+                //restart
+                if (ai.beings.Count == 0)
+                {
+                    ai.Restart();
+                }
+
+                //fix visPos
+                if (!maximised)
+                {
+                    vis.ResisedEnv();
+                    //vis.visPos = new PointF(Width, Height);
+                    maximised = true;
+                }
+
+                if (alive)
+                {
+                    if (essence_spawn_time_rn <= 0)
+                    {
+                        essence_spawn_time_rn = (int)(f.NormDist_RandomX(essence_spawn_time_mean, essence_spawn_time_sd) / timeInterval);
+                    }
+                    else if (counter % essence_spawn_time_rn == 0)
+                    {
+                        if (ai.essences.Count == 0)
+                        {
+                            ai.NewEssence();
+                        }
+                        else if (ai.essences.Count == 1)
+                        {
+                            ai.NewEssence(ai.essences[0].p);
+                        }
+                        else
+                        {
+                            PointF p = new PointF();
+
+                            if (ai.eatenEssence.Count != 0)
+                            {
+                                // spawn close to where the last few essences
+                                // were eaten
+                                int ran = rn.Next(0, ai.eatenEssence.Count);
+
+                                p = ai.eatenEssence[ran];
+                                ai.RemoveEatenEssence(p);
+                            }
+                            else if (ai.essences.Count != 0)
+                            {
+                                //spawn close to other essence (thats not taken)
+                                int ran = rn.Next(0, ai.essences.Count);
+                                Essence essence = ai.essences[ran];
+
+                                while (ai.EssenceTaken(essence))
+                                {
+                                    ran = rn.Next(0, ai.essences.Count);
+                                    essence = ai.essences[ran];
+                                }
+
+                                p = essence.p;
+                            }
+                            p = f.NormDist_RandomPoint(p, ai.spawn_spread);
+                            ai.NewEssence(p);
+                        }
+                        essence_spawn_time_rn = (int)(f.NormDist_RandomX(essence_spawn_time_mean, essence_spawn_time_sd) / timeInterval);
+                        vis.PlaySound_Essence_Add();
+                    }
+
+                    ai.Apply();
+                    phy.Apply();
+                }
+                //vis.Draw();
+
+                IncrementCounter();
+
+                Thread.Sleep(timer.Interval);
+            }
+        }
+
         private void timer_Tick_1(object sender, EventArgs e)
         {
-            //restart
-            if (ai.beings.Count == 0)
-            {
-                ai.Restart();
-            }
 
-            //fix visPos
-            if (!maximised)
-            {
-                vis.ResisedEnv();
-                //vis.visPos = new PointF(Width, Height);
-                maximised = true;
-            }
-
-            if (alive)
-            {
-                if (essence_spawn_time_rn <= 0)
-                {
-                    essence_spawn_time_rn = (int)(f.NormDist_RandomX(essence_spawn_time_mean, essence_spawn_time_sd) / timeInterval);
-                }
-                else if (counter % essence_spawn_time_rn == 0)
-                {
-                    if (ai.essences.Count == 0)
-                    {
-                        ai.NewEssence();
-                    }
-                    else if (ai.essences.Count == 1)
-                    {
-                        ai.NewEssence(ai.essences[0].p);
-                    }
-                    else
-                    {
-                        //spawn close to other essence (thats not taken)
-                        //int index=0;
-                        int ran = rn.Next(0, ai.essences.Count);
-                        //int[] tried = new int[ai.essences.Count];
-                        Essence essence = ai.essences[ran];
-                        while (ai.EssenceTaken(essence))
-                        {
-                            ran = rn.Next(0, ai.essences.Count);
-                            essence = ai.essences[ran];
-
-                            //int c = ai.essences.Count;
-                            //if (ran == c - 1)
-                            //{
-                            //    ran = 0;
-                            //}
-                            //for (int i = ran; i < c; i++)
-                            //{
-                            //    if (!ai.EssenceTaken(ai.essences[i]))
-                            //    {
-                            //        essence = ai.essences[i];
-                            //        break;
-                            //    }
-                            //}
-                        }
-                        PointF p = f.NormDist_RandomPoint(essence.p, ai.spawn_spread);
-                        ai.NewEssence(p);
-                    }
-                    essence_spawn_time_rn = (int)(f.NormDist_RandomX(essence_spawn_time_mean, essence_spawn_time_sd) / timeInterval);
-                    vis.PlaySound_Essence_Add();
-                }
-
-                ai.Apply();
-                phy.Apply();
-            }
-            vis.Draw();
-
-            IncrementCounter();
         }
 
         private void IncrementCounter()
@@ -382,6 +399,9 @@ namespace AI
         void Env_Disposed(object sender, System.EventArgs e)
         {
             vis.Dispose();
+            ai.Dispose();
+            thread.Abort();
+            thread.Join();
         }
     }
 }

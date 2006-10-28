@@ -35,7 +35,7 @@ namespace AI
             // timer
             // 
             this.timer.Enabled = true;
-            this.timer.Interval = 25;
+            this.timer.Interval = 30;
             this.timer.Tick += new System.EventHandler(this.timer_Tick_1);
             // 
             // Env
@@ -50,19 +50,20 @@ namespace AI
             this.ResizeBegin += new System.EventHandler(this.Env_ResizeBegin);
             this.MouseWheel += new System.Windows.Forms.MouseEventHandler(this.Env_MouseWheel);
             this.MouseUp += new System.Windows.Forms.MouseEventHandler(this.Env_MouseUp);
+            this.Disposed += new System.EventHandler(this.Env_Disposed);
+            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Env_KeyUp);
             this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.Env_MouseMove);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Env_KeyDown);
-            this.KeyUp += new System.Windows.Forms.KeyEventHandler(Env_KeyUp);
             this.ResizeEnd += new System.EventHandler(this.Env_ResizeEnd);
             this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Env_MouseDown);
-            this.Disposed += new System.EventHandler(Env_Disposed);
             this.ResumeLayout(false);
 
         }
 
         #endregion
 
-        private System.Windows.Forms.Timer timer;
+        public System.Windows.Forms.Timer timer;
+
     }
 }
 

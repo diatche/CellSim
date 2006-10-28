@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Drawing;
 using System.Collections.ObjectModel;
+using System.Threading;
 
 namespace AI
 {
@@ -13,6 +14,7 @@ namespace AI
         internal Collection<Being> beings;
         internal Collection<Essence> essences;
         internal Collection<Shell> shells;
+        internal Collection<PointF> eatenEssence;
         PointF INF_PointF, center;
         Random rn;
         int counter, idCounter;
@@ -24,9 +26,9 @@ namespace AI
         float density_being = 1.0f;
         float density_essence = 0.5f;
         float density_shell = 0.2f;
-        public float spawn_spread = 200f;
-        int spawn_beings = 2;
-        int spawn_essence = 20;
+        public float spawn_spread = 400f;
+        int spawn_beings = 5;
+        int spawn_essence = 30;
         float being_lookAround_interval = 0.1f;
         public float being_lookAround_radius = 100f;
         float being_propulsion_force_max = 130000f;
@@ -48,6 +50,8 @@ namespace AI
             beings = new Collection<Being>();
             essences = new Collection<Essence>();
             shells = new Collection<Shell>();
+
+            eatenEssence = new Collection<PointF>();
 
             INF_PointF = new PointF(float.PositiveInfinity, float.PositiveInfinity);
             rn = new Random((int)DateTime.Now.Ticks);
@@ -93,6 +97,10 @@ namespace AI
             volume = (float)(4.0 / 3.0 * Math.PI * Math.Pow(being.radius, 3));
             being.mass = volume * density_being;
 
+            ThreadStart starter = delegate { ApplyBeing(being); };
+            being.thread = new Thread(starter);
+            being.thread.Start();
+
             beings.Add(being);
 
             return being;
@@ -112,6 +120,10 @@ namespace AI
 
             being.shells.Add(shell);
             shells.Add(shell);
+
+            //ThreadStart starter = delegate { ApplyShell(shell); };
+            //being.thread = new Thread(starter);
+            //being.thread.Start();
 
             return shell;
         }
@@ -153,6 +165,10 @@ namespace AI
                 essence.p = new PointF(shell.p.X, shell.p.Y + shell.radius + essence.radius);
             }
 
+            ThreadStart starter = delegate { ApplyEssence(essence); };
+            essence.thread = new Thread(starter);
+            essence.thread.Start();
+
             essences.Add(essence);
 
             return essence;
@@ -160,23 +176,169 @@ namespace AI
 
         public void Apply()
         {
-            if (beings.Count == 0)
-            {
-                return;
-            }
+            //if (beings.Count == 0)
+            //{
+            //    return;
+            //}
 
-            ResetForces();
+            //ResetForces();
 
-            Think();
-            Act();
+            //Think();
+            //Act();
 
-            BodyFunction();
-            Remove();
-            BeingDivide();
+            //BodyFunction();
+            //Remove();
+            //BeingDivide();
 
             //-----
             IncrementCounter();
             age += env.timeInterval;
+        }
+
+        public void ApplyBeing(Being being)
+        {
+            while (being.thread.IsAlive)
+            {
+                if (env.phy != null)
+                {
+                    bool retry = true;
+                    while (retry)
+                    {
+                        retry = false;
+                        try
+                        {
+                            being.force = new PointF();
+
+                            //AI
+                            LookAround(being);
+                            Think(being);
+                            Act(being);
+
+                            BodyFunction(being);
+
+                            for (int v = 0; v < essence_types; v++)
+                            {
+                                if (being.amount[v] <= 0)
+                                {
+                                    RemoveBeing(being);
+                                    return;
+                                }
+                            }
+
+                            if (being.timer_divide <= 0)
+                            {
+                                BeingDivide(being);
+                            }
+
+                            //Physics
+                            env.phy.RealiseForce(being);
+
+                            int c = being.shells.Count;
+                            for (int i = 0; i < c; i++)
+                            {
+                                ApplyShell(being.shells[i]);
+
+                                int cc = being.shells[i].essences.Count;
+                                for (int v = 0; v < cc; v++)
+                                {
+                                    if (being.shells[i].essences.Count != cc)
+                                    {
+                                        break;
+                                    }
+                                    ApplyEssence(being.shells[i].essences[v]);
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            retry = true;
+                        }
+                    }
+                }
+
+                Thread.Sleep(env.timer.Interval + rn.Next(-3, 3));
+            }
+        }
+        public void ApplyShell(Shell shell)
+        {
+            if (shell.being == null)
+            {
+                return;
+            }
+
+            if (env.phy != null)
+            {
+                //Physics
+                env.phy.RealiseForce(shell);
+                env.phy.CorrectDistance(shell);
+            }
+        }
+        public void ApplyEssence(Essence essence)
+        {
+            bool loop = true;
+
+            while (loop)
+            {
+                if (essence.shell != null && Thread.CurrentThread == essence.thread)
+                {
+                    Thread.Sleep(env.timer.Interval * 2);
+                }
+                else
+                {
+                    if (env.phy != null)
+                    {
+                        bool retry = true;
+                        while (retry)
+                        {
+                            retry = false;
+                            try
+                            {
+                                //Physics
+                                if (essence.shell == null)
+                                {
+                                    essence.force = f.NormDist_RandomPoint(new PointF(), env.phy.essence_movement_force_sd);
+                                    essence.force = f.Multiply(essence.force, essence.radius);
+                                    essence.force = f.Multiply(essence.force, essence.radius);
+
+                                    essence.velocity = f.Multiply(essence.velocity, env.phy.frictionPerTick);
+
+                                    essence.age += env.timeInterval;
+
+                                    env.phy.RealiseForce(essence);
+
+                                    loop = true;
+                                }
+                                else
+                                {
+                                    loop = false;
+                                    essence.age = 0;
+                                }
+                                env.phy.CorrectDistance(essence);
+
+                                if (essence.amount <= 0 || essence.age > 300)
+                                {
+                                    RemoveEssence(essence);
+                                    return;
+                                }
+                            }
+                            catch
+                            {
+                                retry = true;
+                            }
+                        }
+                    }
+
+                    if (essence.shell == null)
+                    {
+                        Thread.Sleep(env.timer.Interval * 2 + rn.Next(-3, 3));
+                    }
+                }
+
+                if (!essence.thread.IsAlive)
+                {
+                    loop = false;
+                }
+            }
         }
 
         void ResetForces()
@@ -185,15 +347,6 @@ namespace AI
             for (int i = 0; i < c; i++)
             {
                 beings[i].force = new PointF();
-
-                if (beings[i].timer_feed > 0)
-                {
-                    beings[i].timer_feed -= env.timeInterval;
-                }
-                else if (beings[i].timer_feed < 0)
-                {
-                    beings[i].timer_feed = 0;
-                }
             }
 
             c = essences.Count;
@@ -244,6 +397,8 @@ namespace AI
             float essence_per_unitForce = 0.00000005f;
             float essence_transfer_per_s = 0.08f;
             float essence_per_s = 0.01f;
+
+            being.counter++;
 
             being.timer_memory_long_unvisited += env.timeInterval;
             if (being.memory_essence.count_long == 0 || f.Distance(being.p, being.memory_essence.mean_long) <= being.memory_essence.sd_long * 3f)
@@ -316,10 +471,20 @@ namespace AI
                 }
             }
 
+            //feed timer
+            if (being.timer_feed > 0)
+            {
+                being.timer_feed -= env.timeInterval;
+            }
+            else if (being.timer_feed < 0)
+            {
+                being.timer_feed = 0;
+            }
+
             //divide
             bool healthy = true;
 
-            if (being.shells.Count >= 3)
+            if (being.shells.Count >= 8)
             {
                 for (int i = 0; i < essence_types; i++)
                 {
@@ -406,15 +571,44 @@ namespace AI
 
             }
         }
-        void RemoveShell(Shell shell)
+        void RemoveShell(Shell shell, bool delete)
         {
+            if (!delete)
+            {
+                try
+                {
+                    IEnumerator<Essence> en = shell.essences.GetEnumerator();
+                    Essence essence;
+
+                    while (en.MoveNext())
+                    {
+                        essence = en.Current;
+
+                        essence.shell = null;
+                        essence.timer_creation = timer_creation;
+
+                        //ThreadStart starter = delegate { ApplyEssence(shell.essences[i]); };
+                        //shell.essences[i].thread = new Thread(starter);
+                        //shell.essences[i].thread.Start();
+                    }
+                    en.Dispose();
+                }
+                catch { }
+            }
+
             shell.being.shells.Remove(shell);
             shells.Remove(shell);
 
             while (shell.essences.Count != 0)
             {
-                essences.Remove(shell.essences[0]);
-                shell.essences.Remove(shell.essences[0]);
+                if (delete)
+                {
+                    RemoveEssence(shell.essences[0]);
+                }
+                else
+                {
+                    shell.essences.Remove(shell.essences[0]);
+                }
             }
         }
         public void RemoveEssence(Essence essence)
@@ -431,6 +625,9 @@ namespace AI
             }
 
             //remove from visibility
+
+            essence.thread.Abort();
+            essence.thread.Join();
         }
         void RemoveBeing(Being being)
         {
@@ -444,28 +641,32 @@ namespace AI
                 env.vis.selected_hover_being = null;
             }
 
-            //break shells
-            int c, cc;
-            c = being.shells.Count;
-            if (c != 0)
+            ////break shells
+            //int c;
+            //c = being.shells.Count;
+            //if (c != 0)
+            //{
+            while (being.shells.Count != 0)
             {
-                for (int i = 0; i < c; i++)
-                {
-                    cc = being.shells[i].essences.Count;
-                    if (cc != 0)
-                    {
-                        for (int v = 0; v < cc; v++)
-                        {
-                            being.shells[i].essences[v].shell = null;
-                            being.shells[i].essences[v].timer_creation = timer_creation;
-                        }
-                    }
-                    shells.Remove(being.shells[i]);
-                }
+                RemoveShell(being.shells[0], false);
             }
+            //for (int i = 0; i < c; i++)
+            //{
+            //    //cc = being.shells[i].essences.Count;
+            //    //if (cc != 0)
+            //    //{
+            //    //    for (int v = 0; v < cc; v++)
+            //    //    {
+            //    //        being.shells[i].essences[v].shell = null;
+            //    //        being.shells[i].essences[v].timer_creation = timer_creation;
+            //    //    }
+            //    //}
+            //    //shells.Remove(being.shells[i]);
+            //}
+            //}
 
             //remove from visibility
-            c = beings.Count;
+            int c = beings.Count;
             if (c != 0)
             {
                 for (int i = 0; i < c; i++)
@@ -475,6 +676,9 @@ namespace AI
             }
 
             env.vis.PlaySound_Being_Die();
+
+            being.thread.Abort();
+            being.thread.Join();
         }
 
         void BeingDivide()
@@ -511,7 +715,7 @@ namespace AI
             middleShell = being.shells[middle];
             //change shell into head
             being2 = NewBeing(middleShell.p, being.generation + 1);
-            RemoveShell(middleShell);
+            RemoveShell(middleShell, true);
 
             //transfer shells
             int i = middle;
@@ -667,82 +871,86 @@ namespace AI
 
         void LookAround(Being being)
         {
-            if ((int)(being_lookAround_interval / env.timeInterval) == 0 || counter % (int)(being_lookAround_interval / env.timeInterval) == 0)
+            if ((int)(being_lookAround_interval / env.timeInterval) == 0 || being.counter % (int)(being_lookAround_interval / env.timeInterval) == 0)
             {
                 float dist;
                 int c, cc, ccc;
-                bool found;
-
-                being.visibleBeings.Clear();
-                being.visibleEssence.Clear();
+                bool found, changed;
 
                 //beings
-                c = beings.Count;
-                if (c != 0)
-                {
-                    for (int i = 0; i < c; i++)
-                    {
-                        if (beings[i] != being && f.Distance(beings[i].p, being.p) <= being_lookAround_radius)
-                        {
-                            being.visibleBeings.Add(beings[i]);
-                        }
-                    }
-                }
-                //essence
-                c = essences.Count;
-                if (c != 0)
-                {
-                    for (int i = 0; i < c; i++)
-                    {
-                        if (f.Distance(essences[i].p, being.p) <= being_lookAround_radius)
-                        {
-                            //check that its not eaten
-                            if (!EssenceTaken(essences[i]))
-                            {
-                                being.visibleEssence.Add(essences[i]);
-                                being.memory_essence.AddMemory(essences[i].p, essences[i].id);
-                                being.notFoundEssence = false;
-                            }
-                            else
-                            {
-                                if (essences[i].shell.being != being)
-                                {
-                                    being.visibleBeings = AddToCol(being.visibleBeings, essences[i].shell.being);
-                                }
-                            }
+                being.visibleBeings.Clear();
+                IEnumerator<Being> en = env.ai.beings.GetEnumerator();
+                Being being2;
 
-                            ////chack that it is not one of own
-                            //cc = being.shells.Count;
-                            //found = false;
-                            //if (cc != 0)
-                            //{
-                            //    for (int v = 0; v < cc; v++)
-                            //    {
-                            //        ccc = being.shells[v].essences.Count;
-                            //        if (ccc != 0)
-                            //        {
-                            //            for (int b = 0; b < ccc; b++)
-                            //            {
-                            //                if (essences[i] == being.shells[v].essences[b])
-                            //                {
-                            //                    found = true;
-                            //                    break;
-                            //                }
-                            //            }
-                            //        }
-                            //        if (found)
-                            //        {
-                            //            break;
-                            //        }
-                            //    }
-                            //}
-                            //if (!found)
-                            //{
-                            //    being.visibleEssence.Add(essences[i]);
-                            //}
-                        }
+                while (en.MoveNext())
+                {
+                    being2 = en.Current;
+
+                    if (being2 != being && f.Distance(being2.p, being.p) <= being_lookAround_radius)
+                    {
+                        being.visibleBeings.Add(being2);
                     }
                 }
+                en.Dispose();
+
+                //essence
+                being.visibleEssence.Clear();
+                IEnumerator<Essence> en2 = env.ai.essences.GetEnumerator();
+                Essence essence;
+
+                while (en2.MoveNext())
+                {
+                    essence = en2.Current;
+
+                    if (f.Distance(essence.p, being.p) <= being_lookAround_radius)
+                    {
+                        //check that its not eaten
+                        if (!EssenceTaken(essence))
+                        {
+                            being.visibleEssence.Add(essence);
+                            being.memory_essence.AddMemory(essence.p, essence.id);
+                            being.notFoundEssence = false;
+                        }
+                        else
+                        {
+                            if (essence.shell.being != being)
+                            {
+                                being.visibleBeings = AddToCol(being.visibleBeings, essence.shell.being);
+                            }
+                        }
+
+                        ////check that it is not one of own
+                        //cc = being.shells.Count;
+                        //found = false;
+                        //if (cc != 0)
+                        //{
+                        //    for (int v = 0; v < cc; v++)
+                        //    {
+                        //        ccc = being.shells[v].essences.Count;
+                        //        if (ccc != 0)
+                        //        {
+                        //            for (int b = 0; b < ccc; b++)
+                        //            {
+                        //                if (essences[i] == being.shells[v].essences[b])
+                        //                {
+                        //                    found = true;
+                        //                    break;
+                        //                }
+                        //            }
+                        //        }
+                        //        if (found)
+                        //        {
+                        //            break;
+                        //        }
+                        //    }
+                        //}
+                        //if (!found)
+                        //{
+                        //    being.visibleEssence.Add(essences[i]);
+                        //}
+                    }
+                }
+                en2.Dispose();
             }
         }
 
@@ -1138,6 +1346,30 @@ namespace AI
             return str;
         }
 
+        public void AddEatenEssence(PointF p)
+        {
+            // keep at threshhold, update as needed
+
+            int max = 10;
+
+            int c = eatenEssence.Count;
+
+            while (c >= max)
+                eatenEssence.Remove(eatenEssence[eatenEssence.Count - 1]);
+            
+            eatenEssence.Add(p);
+        }
+        public void RemoveEatenEssence(PointF p)
+        {
+            int c = eatenEssence.Count;
+            if (c == 0)
+            {
+                return;
+            }
+
+            eatenEssence.Remove(p);
+        }
+
         void CreateWorld()
         {
             Being being;
@@ -1172,6 +1404,48 @@ namespace AI
             env.vis.PlaySound_Restart();
 
             env.vis.visPos = new PointF(env.Width / 2, env.Height / 2);
+        }
+
+        public void Dispose()
+        {
+            bool retry = true;
+
+            while (retry)
+            {
+                retry = false;
+                try
+                {
+                    IEnumerator<Being> en = beings.GetEnumerator();
+                    Being being;
+
+                    while (en.MoveNext())
+                    {
+                        being = en.Current;
+                        being.thread.Abort();
+                        being.thread.Join();
+                    }
+                }
+                catch { retry = true; }
+            }
+
+            retry = true;
+            while (retry)
+            {
+                retry = false;
+                try
+                {
+                    IEnumerator<Essence> en = essences.GetEnumerator();
+                    Essence essence;
+
+                    while (en.MoveNext())
+                    {
+                        essence = en.Current;
+                        essence.thread.Abort();
+                        essence.thread.Join();
+                    }
+                }
+                catch { retry = true; }
+            }
         }
 
         void IncrementCounter()
@@ -1215,6 +1489,9 @@ namespace AI
         public int generation, divisions, id, unsucessful_feeds_short, unsucessful_feeds_long, status, minEssenceType;
         public float timer_feed, timer_creation, timer_divide;
         public float timer_life, timer_memory_long_unvisited;
+        public int counter;
+
+        public Thread thread;
 
         public Being(int _id)
         {
@@ -1393,6 +1670,8 @@ namespace AI
         internal Being being;
         public int id;
 
+        //public Thread thread;
+
         public Shell(int _id)
         {
             essences = new Collection<Essence>();
@@ -1407,6 +1686,8 @@ namespace AI
         public int type, id;
         public bool external;
         public float timer_creation, age;
+
+        public Thread thread;
 
         public Essence(int _id)
         {

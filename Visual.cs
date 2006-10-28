@@ -4,6 +4,7 @@ using System.Text;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using Microsoft.DirectX.AudioVideoPlayback;
+using System.Threading;
 
 namespace AI
 {
@@ -22,6 +23,8 @@ namespace AI
         string status;
         public bool selected_being_follow;
         int status_miss_lines;
+
+        Thread thread;
 
         //drawing
         Font font = new Font("Verdana", 8.25f, FontStyle.Regular);
@@ -51,6 +54,10 @@ namespace AI
             selected_being_follow = false;
 
             visPos = new PointF(env.Width / 2, env.Height / 2);
+
+            ThreadStart starter = delegate { Draw(); };
+            thread = new Thread(starter);
+            thread.Start();
 
             Load();
         }
@@ -108,22 +115,31 @@ namespace AI
 
             //check for closest
             float dist, closestDist, minDistMultiplier;
-            Being closest;
+            Being closest, being;
 
             minDistMultiplier = 20.0f;
 
             closest = null;
             closestDist = float.MaxValue;
 
-            for (int i = 0; i < c; i++)
+            try
             {
-                dist = f.Distance(p, env.ai.beings[i].p);
-                if (dist < closestDist & dist < (float)Math.Pow(env.ai.beings[i].radius, 0.1) * minDistMultiplier)
+                IEnumerator<Being> en = env.ai.beings.GetEnumerator();
+
+                while (en.MoveNext())
                 {
-                    closestDist = dist;
-                    closest = env.ai.beings[i];
+                    being = en.Current;
+
+                    dist = f.Distance(p, being.p);
+                    if (dist < closestDist & dist < (float)Math.Pow(being.radius, 0.1) * minDistMultiplier)
+                    {
+                        closestDist = dist;
+                        closest = being;
+                    }
                 }
+                en.Dispose();
             }
+            catch { }
 
             return closest;
         }
@@ -139,22 +155,31 @@ namespace AI
 
             //check for closest
             float dist, closestDist, minDistMultiplier;
-            Essence closest;
+            Essence closest, essence;
 
             minDistMultiplier = 4.0f;
 
             closest = null;
             closestDist = float.MaxValue;
 
-            for (int i = 0; i < c; i++)
+            try
             {
-                dist = f.Distance(p, env.ai.essences[i].p);
-                if (env.ai.essences[i].shell == null && dist < closestDist & dist < env.ai.essences[i].radius * minDistMultiplier)
+                IEnumerator<Essence> en = env.ai.essences.GetEnumerator();
+
+                while (en.MoveNext())
                 {
-                    closestDist = dist;
-                    closest = env.ai.essences[i];
+                    essence = en.Current;
+
+                    dist = f.Distance(p, essence.p);
+                    if (essence.shell == null && dist < closestDist & dist < essence.radius * minDistMultiplier)
+                    {
+                        closestDist = dist;
+                        closest = essence;
+                    }
                 }
+                en.Dispose();
             }
+            catch { }
 
             return closest;
         }
@@ -178,30 +203,52 @@ namespace AI
             }
         }
 
-        public void Draw()
+        private void Draw()
         {
-            env.Invalidate();
+            while (thread.IsAlive)
+            {
+                env.Invalidate();
+
+                GetFPS();
+                IncrementCounter();
+
+                Thread.Sleep(env.timer.Interval);
+            }
         }
 
-        void DrawAll(object sender, System.Windows.Forms.PaintEventArgs newE)
+        void Update_e(object sender, System.Windows.Forms.PaintEventArgs newE)
         {
             e = newE;
+
             e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             portal_select_being = null;
 
-            FollowSelectedBeing();
+            bool retry = true;
 
-            DrawStatus();
-            DrawRadar();
+            while (retry)
+            {
+                retry = false;
+                try
+                {
+                    e.Graphics.Transform = new Matrix(1, 0, 0, 1, 0, 0);
 
-            e.Graphics.Transform = new Matrix(scale, 0, 0, scale, visPos.X, visPos.Y);
+                    FollowSelectedBeing();
 
-            DrawShell();
-            DrawEssence();
-            DrawBeing();
+                    DrawStatus();
+                    DrawRadar();
 
-            GetFPS();
-            IncrementCounter();
+                    e.Graphics.Transform = new Matrix(scale, 0, 0, scale, visPos.X, visPos.Y);
+
+                    DrawShell();
+                    DrawEssence();
+                    DrawBeing();
+                }
+                catch
+                {
+                    e.Graphics.Clear(env.BackColor);
+                    retry = true;
+                }
+            }
         }
 
         public void ScrollStatus(int lines)
@@ -339,9 +386,13 @@ namespace AI
             {
                 return;
             }
-            for (int i = 0; i < c; i++)
+            //for (int i = 0; i < c; i++)
+            //{
+
+            IEnumerator<Being> en = env.ai.beings.GetEnumerator();
+            while (en.MoveNext())
             {
-                being = env.ai.beings[i];
+                being = en.Current;
 
                 //p
                 p1 = f.ConvertTo(TransformToScreen(being.p));
@@ -408,20 +459,18 @@ namespace AI
                 //    DrawLine(v1, v2, brush_shadow_50);
                 //}
             }
+            en.Dispose();
         }
 
         private void DrawBeing()
         {
-            int c = env.ai.beings.Count;
-            if (c == 0)
-            {
-                return;
-            }
+            IEnumerator<Being> en = env.ai.beings.GetEnumerator();
 
-            for (int i = 0; i < c; i++)
+            while (en.MoveNext())
             {
-                DrawBeing(env.ai.beings[i]);
+                DrawBeing(en.Current);
             }
+            en.Dispose();
         }
         private void DrawBeing(Being being)
         {
@@ -674,16 +723,13 @@ namespace AI
 
         private void DrawShell()
         {
-            int c = env.ai.shells.Count;
-            if (c == 0)
-            {
-                return;
-            }
+            IEnumerator<Shell> en = env.ai.shells.GetEnumerator();
 
-            for (int i = 0; i < c; i++)
+            while (en.MoveNext())
             {
-                DrawShell(env.ai.shells[i]);
+                DrawShell(en.Current);
             }
+            en.Dispose();
         }
         private void DrawShell(Shell shell)
         {
@@ -726,23 +772,18 @@ namespace AI
             {
                 DrawCircle(p, tail_radius, null, Brushes.White);
             }
-            catch
-            {
-            }
+            catch { }
         }
 
         private void DrawEssence()
         {
-            int c = env.ai.essences.Count;
-            if (c == 0)
-            {
-                return;
-            }
+            IEnumerator<Essence> en = env.ai.essences.GetEnumerator();
 
-            for (int i = 0; i < c; i++)
+            while (en.MoveNext())
             {
-                DrawEssence(env.ai.essences[i]);
+                DrawEssence(en.Current);
             }
+            en.Dispose();
         }
         private void DrawEssence(Essence essence)
         {
@@ -1126,7 +1167,7 @@ namespace AI
 
         private void Load()
         {
-            env.Paint += new System.Windows.Forms.PaintEventHandler(DrawAll);
+            env.Paint += new System.Windows.Forms.PaintEventHandler(Update_e);
 
             pen = new Pen(Brushes.White);
             penThick = new Pen(Brushes.White, 2);
@@ -1182,6 +1223,11 @@ namespace AI
         {
             int i = rn.Next(0, sound_eat.Length);
 
+            if (sound_eat[i].Disposed)
+            {
+                return;
+            }
+
             sound_eat[i].CurrentPosition = 0;
 
             if (!sound_eat[i].Playing)
@@ -1191,6 +1237,11 @@ namespace AI
         }
         public void PlaySound_Being_Born()
         {
+            if (sound_born.Disposed)
+            {
+                return;
+            }
+
             sound_born.CurrentPosition = 0;
 
             if (!sound_born.Playing)
@@ -1200,6 +1251,11 @@ namespace AI
         }
         public void PlaySound_Being_Die()
         {
+            if (sound_die.Disposed)
+            {
+                return;
+            }
+
             sound_die.CurrentPosition = 0;
 
             if (!sound_die.Playing)
@@ -1209,6 +1265,11 @@ namespace AI
         }
         public void PlaySound_Restart()
         {
+            if (sound_born.Disposed)
+            {
+                return;
+            }
+
             sound_born.CurrentPosition = 0;
 
             if (!sound_born.Playing)
@@ -1218,6 +1279,11 @@ namespace AI
         }
         public void PlaySound_Essence_Add()
         {
+            //if (sound_essence_add.Disposed)
+            //{
+            //    return;
+            //}
+
             //sound_essence_add.CurrentPosition = 0;
 
             //if (!sound_essence_add.Playing)
@@ -1252,12 +1318,19 @@ namespace AI
             brush_shadow_70.Dispose();
 
             sound_ambience.Dispose();
+            sound_born.Dispose();
+            sound_die.Dispose();
+            sound_essence_add.Dispose();
+            sound_restart.Dispose();
 
             int c = sound_eat.Length;
             for (int i = 0; i < c; i++)
             {
                 sound_eat[i].Dispose();
             }
+
+            thread.Abort();
+            thread.Join();
         }
 
         private string CleanPath(string path)
