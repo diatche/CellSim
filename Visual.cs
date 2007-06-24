@@ -59,6 +59,8 @@ namespace AI
             thread = new Thread(starter);
             thread.Start();
 
+            thread.Priority = ThreadPriority.BelowNormal;
+
             Load();
         }
 
@@ -207,6 +209,19 @@ namespace AI
         {
             while (thread.IsAlive)
             {
+                //// check that all beings have updated
+                //int c = env.ai.beings.Count;
+                //if (c != 0)
+                //{
+                //    for (int i = 0; i < c; i++)
+                //    {
+                //        if (!env.ai.beings[i].updated)
+                //        {
+                //            return;
+                //        }
+                //    }
+                //}
+
                 env.Invalidate();
 
                 GetFPS();
@@ -719,6 +734,7 @@ namespace AI
                 e.Graphics.DrawClosedCurve(new Pen(brush_shadow_70), ps);
             }
 
+            being.updated = false;
         }
 
         private void DrawShell()

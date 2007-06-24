@@ -41,6 +41,7 @@ namespace AI
         float being_dir_change_sd = 0.02f;
         int being_unsucessful_feeds_max = 3;
         float being_memory_long_unvisited_max = 15f;
+        public float essence_age_max = 600f;
 
         public AI(Env _env)
         {
@@ -248,6 +249,8 @@ namespace AI
                                     ApplyEssence(being.shells[i].essences[v]);
                                 }
                             }
+
+                            being.updated = true;
                         }
                         catch
                         {
@@ -261,6 +264,12 @@ namespace AI
         }
         public void ApplyShell(Shell shell)
         {
+            if (!env.alive)
+            {
+                Thread.Sleep(env.timer.Interval);
+                return;
+            }
+
             if (shell.being == null)
             {
                 return;
@@ -275,6 +284,12 @@ namespace AI
         }
         public void ApplyEssence(Essence essence)
         {
+            if (!env.alive)
+            {
+                Thread.Sleep(env.timer.Interval);
+                return;
+            }
+
             bool loop = true;
 
             while (loop)
@@ -1490,6 +1505,7 @@ namespace AI
         public float timer_feed, timer_creation, timer_divide;
         public float timer_life, timer_memory_long_unvisited;
         public int counter;
+        public bool updated;
 
         public Thread thread;
 
@@ -1502,6 +1518,7 @@ namespace AI
             memory_essence = new MemoryEssence();
             id = _id;
             status = -1;
+            updated = false;
 
             feeding = false;
             notFoundEssence = true;

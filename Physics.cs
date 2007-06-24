@@ -149,7 +149,7 @@ namespace AI
                     if (ai.essences[i].shell == null)
                     {
                         ai.essences[i].age += env.timeInterval;
-                        if (ai.essences[i].age > 300)
+                        if (ai.essences[i].age > env.ai.essence_age_max)
                         {
                             ai.RemoveEssence(ai.essences[i]);
                             return;

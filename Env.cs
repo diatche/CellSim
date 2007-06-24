@@ -31,7 +31,7 @@ namespace AI
         Thread thread;
 
         //settings
-        float essence_spawn_time_mean = 1f;
+        float essence_spawn_time_mean = 4f;
         float essence_spawn_time_sd = 3f;
 
         public Env()
