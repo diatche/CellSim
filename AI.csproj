@@ -12,7 +12,7 @@
     <ManifestCertificateThumbprint>1173D2B3944616D9BD74E69A3C157B167C3C792D</ManifestCertificateThumbprint>
     <ManifestKeyFile>AI_TemporaryKey.pfx</ManifestKeyFile>
     <GenerateManifests>true</GenerateManifests>
-    <SignManifests>true</SignManifests>
+    <SignManifests>false</SignManifests>
     <PublishUrl>C:\Documents and Settings\OEM\My Documents\Programming\Programs\AI\Publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
