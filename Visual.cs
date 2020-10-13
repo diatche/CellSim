@@ -1200,7 +1200,7 @@ namespace AI
 
             //sound:
             //ambience
-            sound_ambience = new Audio(CleanPath("PAD_FieldChorus.wav"));
+            sound_ambience = new Audio(CleanPath("pad.wav"));
             sound_ambience.Play();
             //ambience.Volume = 0;
             //ambience.Stopping += new EventHandler(ambience_Stopping);

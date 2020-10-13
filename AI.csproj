@@ -107,13 +107,27 @@
     <Compile Include="Visual.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="res\born.wav" />
-    <Content Include="res\die.WAV" />
-    <Content Include="res\eat_0.wav" />
-    <Content Include="res\eat_1.wav" />
-    <Content Include="res\essence_add.wav" />
-    <Content Include="res\PAD_FieldChorus.wav" />
-    <Content Include="res\restart.wav" />
+    <Content Include="res\born.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="res\die.WAV">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="res\eat_0.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="res\eat_1.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="res\essence_add.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="res\pad.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="res\restart.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
