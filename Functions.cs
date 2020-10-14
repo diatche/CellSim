@@ -759,15 +759,15 @@ namespace AI
         public Point RandomPoint(PointF minInclusive, PointF maxExclusive)
         {
             Point p;
-            p = new Point(Random_Next((int)(minInclusive.X), (int)(maxExclusive.X)),
-                           Random_Next((int)(minInclusive.Y), (int)(maxExclusive.Y)));
+            p = new Point(random.Next((int)(minInclusive.X), (int)(maxExclusive.X)),
+                           random.Next((int)(minInclusive.Y), (int)(maxExclusive.Y)));
 
             return p;
         }
 
         public v3 RandomVector()
         {
-            return new v3(Random_Next(-10, 10), Random_Next(-10, 10), Random_Next(-10, 10));
+            return new v3(random.Next(-10, 10), random.Next(-10, 10), random.Next(-10, 10));
         }
 
         public PointF RandomPointWithOffset(PointF center, float offset)
@@ -777,8 +777,8 @@ namespace AI
 
             while (rn == new PointF(0, 0))
             {
-                rn.X = Random_Next(-10, 10);
-                rn.Y = Random_Next(-10, 10);
+                rn.X = random.Next(-10, 10);
+                rn.Y = random.Next(-10, 10);
             }
 
             p = Offset(rn, offset);
@@ -2248,7 +2248,7 @@ namespace AI
         {
             double n;
 
-            n = Random_NextDouble() * Math.PI * 2;
+            n = random.NextDouble() * Math.PI * 2;
 
             //Console.WriteLine("RandomAngle: " + (n / Math.PI * 180));
 
@@ -3228,7 +3228,7 @@ namespace AI
             double rnProb;
             float x;
 
-            rnProb = Random_NextDouble();
+            rnProb = random.NextDouble();
 
             x = NormDist_XfromProb(mean, sd, rnProb);
 
@@ -4769,23 +4769,6 @@ namespace AI
             ps[1] = Add(p1, p);
 
             return ps;
-        }
-
-        public double Random_NextDouble()
-        {
-            Random rn = new Random();
-            return rn.NextDouble();
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="lowerBound">inclusive</param>
-        /// <param name="upperBound">exclusive</param>
-        /// <returns></returns>
-        public int Random_Next(int lowerBound, int upperBound)
-        {
-            Random rn = new Random();
-            return rn.Next(lowerBound, upperBound);
         }
     }
 
