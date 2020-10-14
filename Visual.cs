@@ -1232,8 +1232,8 @@ namespace AI
             sound_born.Volume = -3000;
 
             //die
-            sound_die = new Audio(CleanPath("die.WAV"));
-            sound_die.Volume = -1500;
+            sound_die = new Audio(CleanPath("die.wav"));
+            sound_die.Volume = -1000;
 
             //sound_essence_add
             sound_essence_add = new Audio(CleanPath("essence_add.wav"));
