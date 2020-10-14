@@ -298,6 +298,13 @@ namespace AI
                 "  scroll this text." + Environment.NewLine +
                 Environment.NewLine;
 
+                str += "Music: " + Environment.NewLine +
+                    "\"I Dream\" by nomadicxxl. Available at" + Environment.NewLine +
+                    "https://freesound.org/s/371802/" + Environment.NewLine +
+                    "Under a Creative Commons Attribution 3.0." + Environment.NewLine +
+                    "Full terms at https://creativecommons.org/licenses/by/3.0/" + Environment.NewLine +
+                    Environment.NewLine;
+
                 str += "Scale: x" + string.Format("{0:0.00}", scale) + Environment.NewLine +
                     "Time Scale: x" + string.Format("{0:0.0}", env.timeScale) + Environment.NewLine;
                 str += "Mouse: " + TransformToWorld(env.oldMouseLoc) + Environment.NewLine +
@@ -1224,7 +1231,7 @@ namespace AI
 
             //born
             sound_born = new Audio(CleanPath("born.wav"));
-            sound_born.Volume = -2000;
+            sound_born.Volume = -3000;
 
             //die
             sound_die = new Audio(CleanPath("die.WAV"));
