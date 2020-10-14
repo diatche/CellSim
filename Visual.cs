@@ -287,22 +287,20 @@ namespace AI
                 str = "v" + env.debug.version + Environment.NewLine +
                     "Demonstrates simple AI. The beings need all of the different types of" + Environment.NewLine +
                 "essence to survive." + Environment.NewLine +
-                "- Full (non-roational) world movement implemented." + Environment.NewLine +
+                "- Full (non-rotational) world movement implemented." + Environment.NewLine +
                 "- Left-click to select, right-click to drag." + Environment.NewLine +
                 "- Hold ctrl while left-clicking to lock camera onto target." + Environment.NewLine +
                 "- To change the time scale, hold down 'T' and scroll" + Environment.NewLine +
                 "  with the mouse wheel." + Environment.NewLine +
                 "- You can 'jump to being' by clicking on its corresponding" + Environment.NewLine +
                 "  waypoint in the radar (to the right)." + Environment.NewLine +
-                "- Hold shift while scrolling whith the mouse wheel to" + Environment.NewLine +
+                "- Hold shift while scrolling with the mouse wheel to" + Environment.NewLine +
                 "  scroll this text." + Environment.NewLine +
                 Environment.NewLine;
 
                 str += "Music: " + Environment.NewLine +
-                    "\"I Dream\" by nomadicxxl. Available at" + Environment.NewLine +
-                    "https://freesound.org/s/371802/" + Environment.NewLine +
-                    "Under a Creative Commons Attribution 3.0." + Environment.NewLine +
-                    "Full terms at https://creativecommons.org/licenses/by/3.0/" + Environment.NewLine +
+                    "\"I Dream\" by nomadicxxl. Licence: CC BY 3.0." + Environment.NewLine +
+                    "Available at https://freesound.org/s/371802/" + Environment.NewLine +
                     Environment.NewLine;
 
                 str += "Scale: x" + string.Format("{0:0.00}", scale) + Environment.NewLine +
