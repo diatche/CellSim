@@ -14,7 +14,7 @@ namespace AI
         F f;
         Form form;
         TextBox textbox;
-        public string version = "1.02";
+        public string version = "1.3";
         Collection<ErrorData> errors = new Collection<ErrorData>();
         bool disposed;
 
