@@ -19,7 +19,7 @@ essence to survive.
 
 ## Installation
 
-- This project requires [DirectX SDK](http://microsoft.com/download/details.aspx?id=6812).
+- This project requires .Net 2.0 and [DirectX SDK](http://microsoft.com/download/details.aspx?id=6812).
 
 Tested on Visual Studio 2019 Community.
 
@@ -31,9 +31,9 @@ Tested on Visual Studio 2019 Community.
 
 **Effects:**
 
-"Ting" by [Popup Pixels](http://soundbible.com/1628-Ting.html). Licence [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
+"Ting" by [Popup Pixels](http://soundbible.com/1628-Ting.html). Licence: [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
 
 ## Notes
 
-- This was a project written for a hobby a while back which I stumbled upon in archives.
+- This was a project written as a hobby a while back which I stumbled upon in archives.
 - Original codename: "AI".
