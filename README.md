@@ -25,4 +25,10 @@ Tested on Visual Studio 2019 Community.
 
 ## Attribution
 
-**Music:** "I Dream" by [nomadicxxl](https://freesound.org/s/371802/). Licence: [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
+**Music:**
+
+"I Dream" by [nomadicxxl](https://freesound.org/s/371802/). Licence: [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
+
+**Effects:**
+
+"Ting" by [Popup Pixels](http://soundbible.com/1628-Ting.html). Licence [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).

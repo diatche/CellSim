@@ -303,6 +303,11 @@ namespace AI
                     "Available at https://freesound.org/s/371802/" + Environment.NewLine +
                     Environment.NewLine;
 
+                str += "Effects: " + Environment.NewLine +
+                    "\"Ting\" by Popup Pixels. Licence: CC BY 3.0." + Environment.NewLine +
+                    "Available at http://soundbible.com/1628-Ting.html" + Environment.NewLine +
+                    Environment.NewLine;
+
                 str += "Scale: x" + string.Format("{0:0.00}", scale) + Environment.NewLine +
                     "Time Scale: x" + string.Format("{0:0.0}", env.timeScale) + Environment.NewLine;
                 str += "Mouse: " + TransformToWorld(env.oldMouseLoc) + Environment.NewLine +
@@ -1225,15 +1230,15 @@ namespace AI
 
             //restart
             sound_restart = new Audio(CleanPath("restart.wav"));
-            sound_restart.Volume = -1200;
+            sound_restart.Volume = -1100;
 
             //born
             sound_born = new Audio(CleanPath("born.wav"));
-            sound_born.Volume = -3000;
+            sound_born.Volume = -1200;
 
             //die
             sound_die = new Audio(CleanPath("die.wav"));
-            sound_die.Volume = -1000;
+            sound_die.Volume = -1300;
 
             //sound_essence_add
             sound_essence_add = new Audio(CleanPath("essence_add.wav"));
